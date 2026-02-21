@@ -1,0 +1,3 @@
+[submodule "gangbox"]
+	path = gangbox
+	url = https://github.com/TickShock/gangbox

@@ -1,0 +1,637 @@
+from typing import (
+    List as _List,
+    Dict as _Dict,
+    Optional as _Optional,
+    Literal as _Literal,
+    Union as _Union,
+    Annotated as _Annotated,
+    Final as _Final,
+    get_args as _get_args,
+    cast as _cast,
+)
+from re import (
+    match as _match,
+)
+from datetime import (
+    time as _time,
+    datetime as _datetime,
+    timezone as _timezone,
+    timedelta as _timedelta,
+)
+from pydantic import (
+    BaseModel as _BaseModel,
+    Field as _Field,
+    field_validator as _field_validator,
+)
+
+WeekdayLiteral = _Literal[
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+]
+EventTypeLiteral = _Literal[
+    "SESSION_OPEN",
+    "SESSION_CLOSE",
+]
+CurrencyLiteral = _Literal[
+    "CNH",
+    "ILS",
+    "MXN",
+    "THB",
+    "CZK",
+    "HKD",
+    "HUF",
+    "PLN",
+    "TRY",
+    "ZAR",
+    "DKK",
+    "NOK",
+    "SGD",
+    "GBP",
+    "SEK",
+    "NZD",
+    "AUD",
+    "CAD",
+    "CHF",
+    "JPY",
+    "EUR",
+    "USD",
+    "USDT",
+]
+SymbolLiteral = _Literal[
+    "/KC",
+    "/NQ",
+    "/YM",
+    "/ZS",
+    "1000BONKUSDTPERP",
+    "1000PEPEUSDTPERP",
+    "1000SATSUSDTPERP",
+    "1INCHUSDTPERP",
+    "1MBABYDOGEUSDTPERP",
+    "AAPL",
+    "AAVEUSDTPERP",
+    "ACTUSDTPERP",
+    "ADAUSD",
+    "ADAUSDTPERP",
+    "ADSGn",
+    "ALGOUSDTPERP",
+    "ALICEUSDTPERP",
+    "ALPHAUSDTPERP",
+    "ALVG",
+    "AMZN",
+    "ANKRUSDTPERP",
+    "APEUSDTPERP",
+    "APTUSDTPERP",
+    "ARABICA",
+    "ARUSDTPERP",
+    "ATOMUSDTPERP",
+    "AUD$",
+    "AUDCAD",
+    "AUDCAD.cent",
+    "AUDCHF",
+    "AUDCHF.cent",
+    "AUDIOUSDTPERP",
+    "AUDJPY",
+    "AUDJPY.cent",
+    "AUDNZD",
+    "AUDNZD.cent",
+    "AUDUSD",
+    "AUDUSD.cent",
+    "AUS200",
+    "AUS200.cent",
+    "AVAXUSDTPERP",
+    "AXSUSDTPERP",
+    "BA",
+    "BAC",
+    "BAKEUSDTPERP",
+    "BATUSD",
+    "BATUSDTPERP",
+    "BAT_TST",
+    "BAYGn",
+    "BBUSDTPERP",
+    "BCH$",
+    "BCHUSD",
+    "BCHUSDTPERP",
+    "BMWG",
+    "BNBUSD",
+    "BNBUSDTPERP",
+    "BNPP",
+    "BOOM1000",
+    "BOOM300",
+    "BOOM500",
+    "BTC$",
+    "BTCUSD",
+    "BTCUSD.cent",
+    "BTCUSDTPERP",
+    "BTCUSDTPERP.cent",
+    "C",
+    "CAD$",
+    "CADCHF",
+    "CADCHF.cent",
+    "CADJPY",
+    "CADJPY.cent",
+    "CADSGD",
+    "CATIUSDTPERP",
+    "CELOUSDTPERP",
+    "CELRUSDTPERP",
+    "CHF$",
+    "CHFJPY",
+    "CHFJPY.cent",
+    "CHZUSDTPERP",
+    "CNH$",
+    "CNY$",
+    "COCOA",
+    "COMPUSDTPERP",
+    "COTTON",
+    "CRASH1000",
+    "CRASH300",
+    "CRASH500",
+    "CRVUSDTPERP",
+    "CSCO",
+    "CTKUSDTPERP",
+    "CUDISUSDTPERP",
+    "CVX",
+    "CZK$",
+    "DAMUSDTPERP",
+    "DARUSDTPERP",
+    "DASH$",
+    "DASHUSDTPERP",
+    "DAX",
+    "DAX.cent",
+    "DENTUSDTPERP",
+    "DIAUSDTPERP",
+    "DKK$",
+    "DOGE$",
+    "DOGEUSD",
+    "DOGEUSDTPERP",
+    "DOTUSD",
+    "DOTUSDTPERP",
+    "DUSKUSDTPERP",
+    "DXY",
+    "DYDXUSDTPERP",
+    "EGLDUSDTPERP",
+    "EIGENUSDTPERP",
+    "ENAUSDTPERP",
+    "ENJUSDTPERP",
+    "ENSUSDTPERP",
+    "EOS$",
+    "EOSUSD",
+    "EOSUSDTPERP",
+    "ESP35",
+    "ESP35.cent",
+    "ETC$",
+    "ETCUSDTPERP",
+    "ETH$",
+    "ETHFIUSDTPERP",
+    "ETHUSD",
+    "ETHUSD.cent",
+    "ETHUSDTPERP",
+    "ETHUSDTPERP.cent",
+    "EUR$",
+    "EURAUD",
+    "EURAUD.cent",
+    "EURCAD",
+    "EURCAD.cent",
+    "EURCHF",
+    "EURCHF.cent",
+    "EURCZK",
+    "EURDKK",
+    "EURGBP",
+    "EURGBP.cent",
+    "EURHKD",
+    "EURHUF",
+    "EURJPY",
+    "EURJPY.cent",
+    "EURNOK",
+    "EURNZD",
+    "EURNZD.cent",
+    "EURPLN",
+    "EURSEK",
+    "EURSGD",
+    "EURTRY",
+    "EURUSD",
+    "EURUSD.cent",
+    "EURZAR",
+    "EUSTX50",
+    "EUSTX50.cent",
+    "F",
+    "FARTCOINUSDTPERP",
+    "FDX",
+    "FETUSDTPERP",
+    "FILUSDTPERP",
+    "FLMUSDTPERP",
+    "FLOWUSDTPERP",
+    "FRA40",
+    "FRA40.cent",
+    "FTMUSDTPERP",
+    "GALAUSDTPERP",
+    "GALUSDTPERP",
+    "GBP$",
+    "GBPAUD",
+    "GBPAUD.cent",
+    "GBPCAD",
+    "GBPCAD.cent",
+    "GBPCHF",
+    "GBPCHF.cent",
+    "GBPDKK",
+    "GBPJPY",
+    "GBPJPY.cent",
+    "GBPNOK",
+    "GBPNZD",
+    "GBPNZD.cent",
+    "GBPSEK",
+    "GBPUSD",
+    "GBPUSD.cent",
+    "GLMUSDTPERP",
+    "GMTUSDTPERP",
+    "GOATUSDTPERP",
+    "GOOG",
+    "GRTUSDTPERP",
+    "HBARUSDTPERP",
+    "HIGHUSDTPERP",
+    "HKD$",
+    "HMSTRUSDTPERP",
+    "HOTUSDTPERP",
+    "HP",
+    "HUF$",
+    "HUMAUSDTPERP",
+    "HYPEUSDTPERP",
+    "IBE",
+    "IBM",
+    "ICPUSDTPERP",
+    "ICXUSDTPERP",
+    "ILS$",
+    "IMXUSDTPERP",
+    "INJUSDTPERP",
+    "INR$",
+    "INTC",
+    "IOSTUSDTPERP",
+    "IOTAUSDTPERP",
+    "IOTXUSDTPERP",
+    "IOUSDTPERP",
+    "IPUSDTPERP",
+    "JASMYUSDTPERP",
+    "JNJ",
+    "JPM",
+    "JPN225",
+    "JPN225.cent",
+    "JPY$",
+    "JUPUSDTPERP",
+    "KAITOUSDTPERP",
+    "KASUSDTPERP",
+    "KAVAUSDTPERP",
+    "KLAYUSDTPERP",
+    "KNCUSDTPERP",
+    "KO",
+    "KRW$",
+    "KSMUSDTPERP",
+    "LAUSDTPERP",
+    "LDOUSDTPERP",
+    "LINKUSDTPERP",
+    "LISTAUSDTPERP",
+    "LITUSDTPERP",
+    "LPTUSDTPERP",
+    "LRCUSDTPERP",
+    "LTC$",
+    "LTCUSD",
+    "LTCUSDTPERP",
+    "LVMH",
+    "MA",
+    "MANAUSDTPERP",
+    "MANTAUSDTPERP",
+    "MATICUSDTPERP",
+    "MCD",
+    "MELANIAUSDTPERP",
+    "MERLUSDTPERP",
+    "METISUSDTPERP",
+    "MKRUSDTPERP",
+    "MOODENGUSDTPERP",
+    "MSFT",
+    "MVRS",
+    "MXN$",
+    "NAS100",
+    "NAS100.cent",
+    "NEARUSDTPERP",
+    "NEIROETHUSDTPERP",
+    "NEIROUSDTPERP",
+    "NEOUSDTPERP",
+    "NFLX",
+    "NGAS",
+    "NOK$",
+    "NOKSEK",
+    "NOTUSDTPERP",
+    "NZD$",
+    "NZDCAD",
+    "NZDCAD.cent",
+    "NZDCHF",
+    "NZDCHF.cent",
+    "NZDJPY",
+    "NZDJPY.cent",
+    "NZDUSD",
+    "NZDUSD.cent",
+    "OGNUSDTPERP",
+    "ONDOUSDTPERP",
+    "ONEUSDTPERP",
+    "OPUSDTPERP",
+    "ORCL",
+    "ORDIUSDTPERP",
+    "OXTUSDTPERP",
+    "PENDLEUSDTPERP",
+    "PEOPLEUSDTPERP",
+    "PG",
+    "PLN$",
+    "PNUTUSDTPERP",
+    "POLYXUSDTPERP",
+    "POPCATUSDTPERP",
+    "PORTALUSDTPERP",
+    "POWRUSDTPERP",
+    "PROVEUSDTPERP",
+    "PYTHUSDTPERP",
+    "QNTUSDTPERP",
+    "QTUMUSDTPERP",
+    "RAREUSDTPERP",
+    "REEFUSDTPERP",
+    "RENDERUSDTPERP",
+    "REZUSDTPERP",
+    "RNDRUSDTPERP",
+    "ROBUSTA",
+    "ROSEUSDTPERP",
+    "RUB$",
+    "RUNEUSDTPERP",
+    "SANDUSDTPERP",
+    "SAPIENUSDTPERP",
+    "SEIUSDTPERP",
+    "SEK$",
+    "SGD$",
+    "SIEGn",
+    "SKK$",
+    "SNXUSDTPERP",
+    "SOLUSD",
+    "SOLUSDTPERP",
+    "SONICUSDTPERP",
+    "SOPHUSDTPERP",
+    "SPELLUSDTPERP",
+    "SPX500",
+    "SPX500.cent",
+    "STORJUSDTPERP",
+    "STRKUSDTPERP",
+    "SUGARRAW",
+    "SUIUSDTPERP",
+    "SUSHIUSDTPERP",
+    "T",
+    "THB$",
+    "THBJPY",
+    "THETAUSDTPERP",
+    "TIAUSDTPERP",
+    "TOKENUSDTPERP",
+    "TONUSDTPERP",
+    "TRBUSDTPERP",
+    "TROYUSDTPERP",
+    "TRUMPUSDTPERP",
+    "TRUUSDTPERP",
+    "TRXUSD",
+    "TRXUSDTPERP",
+    "TRY$",
+    "TSLA",
+    "TURBOUSDTPERP",
+    "UAH$",
+    "UK100",
+    "UK100.cent",
+    "UKOil",
+    "UNFIUSDTPERP",
+    "UNIUSDTPERP",
+    "US30",
+    "US30.cent",
+    "USD$",
+    "USDCAD",
+    "USDCAD.cent",
+    "USDCHF",
+    "USDCHF.cent",
+    "USDCNH",
+    "USDCZK",
+    "USDDKK",
+    "USDHKD",
+    "USDHUF",
+    "USDILS",
+    "USDJPY",
+    "USDJPY.cent",
+    "USDMXN",
+    "USDNOK",
+    "USDPLN",
+    "USDSEK",
+    "USDSGD",
+    "USDT$",
+    "USDTHB",
+    "USDTRY",
+    "USDTUSD",
+    "USDZAR",
+    "USOil",
+    "UXLINKUSDTPERP",
+    "V",
+    "VETUSDTPERP",
+    "VIX",
+    "VOWG_p",
+    "WAVESUSDTPERP",
+    "WCTUSDTPERP",
+    "WIFUSDTPERP",
+    "WLDUSDTPERP",
+    "WUUSDTPERP",
+    "XAGUSD",
+    "XAGUSD.cent",
+    "XAIUSDTPERP",
+    "XAUAUD",
+    "XAUAUD.cent",
+    "XAUEUR",
+    "XAUEUR.cent",
+    "XAUUSD",
+    "XAUUSD.cent",
+    "XCNUSDTPERP",
+    "XDG$",
+    "XLM$",
+    "XLMUSD",
+    "XLMUSDTPERP",
+    "XMR$",
+    "XMRUSDTPERP",
+    "XNYUSDTPERP",
+    "XOM",
+    "XPDUSD",
+    "XPTUSD",
+    "XRP$",
+    "XRPUSD",
+    "XRPUSDTPERP",
+    "XTZUSDTPERP",
+    "YFIUSDTPERP",
+    "ZAR$",
+    "ZECUSDTPERP",
+    "ZENUSDTPERP",
+    "ZILUSDTPERP",
+    "ZKUSDTPERP",
+    "ZROUSDTPERP",
+]
+
+
+class _TradingHourDto(_BaseModel):
+    weekDay: str
+    eventType: EventTypeLiteral
+
+    @_field_validator('weekDay')
+    @classmethod
+    def validate_weekday_format(cls, v: str) -> str:
+        days = "|".join(_get_args(WeekdayLiteral))
+        pattern = rf"^({days}), \d{{2}}:\d{{2}}:\d{{2}}Z$"
+
+        if not _match(pattern, v):
+            raise ValueError(f'weekDay must start with a valid day ({days}) and follow "HH:MM:SSZ"')
+        return v
+
+    def to_bo(self) -> "TradingHour":
+        return TradingHour(self)
+
+
+class _InstrumentDto(_BaseModel):
+    symbol: SymbolLiteral
+    version: int
+    description: str
+    priceIncrement: float
+    pipSize: float
+    lotSize: float
+    multiplier: float
+    tradingHours: _Optional[_List[_TradingHourDto]] = _Field(default=None)
+
+    def to_bo(self) -> "Instrument":
+        return Instrument(self)
+
+
+class _CurrencyDto(_InstrumentDto):
+    type: _Literal["CURRENCY"]
+    currencyType: str
+
+
+class _ProductDto(_InstrumentDto):
+    type: _Literal["PRODUCT"]
+
+
+class _ForexDto(_InstrumentDto):
+    type: _Literal["FOREX"]
+    currency: CurrencyLiteral
+    firstCurrency: str
+    assetClass: str
+
+
+class _CfdDto(_InstrumentDto):
+    type: _Literal["CFD"]
+    currency: CurrencyLiteral
+    assetClass: str
+
+
+class _CfdStockDto(_InstrumentDto):
+    type: _Literal["CFD_STOCK"]
+    currency: CurrencyLiteral
+    assetClass: str
+
+
+class InstrumentsDtoCollection(_BaseModel):
+    instruments: _List[
+        _Annotated[
+            _Union[_ProductDto, _ForexDto, _CfdDto, _CfdStockDto, _CurrencyDto],
+            _Field(discriminator="type")
+        ]
+    ]
+
+
+class TradingHour:
+    def __init__(self, dto: _TradingHourDto) -> None:
+        week_day_lookup: _Dict[WeekdayLiteral, int] = {
+            "Monday": 0,
+            "Tuesday": 1,
+            "Wednesday": 2,
+            "Thursday": 3,
+            "Friday": 4,
+            "Saturday": 5,
+            "Sunday": 6,
+        }
+        day_str, time_str = dto.weekDay.split(", ")
+        self.week_day: _Final[WeekdayLiteral] = _cast(WeekdayLiteral, day_str)
+        self.week_day_int: _Final[int] = week_day_lookup[self.week_day]
+        self.time: _Final[_time] = _time.fromisoformat(time_str.replace("Z", ""))
+        self.event_type: _Final[EventTypeLiteral] = dto.eventType
+
+    def to_dt(self, focal_time: _datetime) -> _datetime:
+        focal_date = focal_time.date()
+
+        days_diff = focal_date.weekday() - self.week_day_int
+        target_datetime_today = _datetime.combine(focal_date, self.time, tzinfo=_timezone.utc)
+        is_future_weekday = days_diff < 0
+        is_later_today = (days_diff == 0 and focal_time < target_datetime_today)
+
+        if is_later_today or is_future_weekday:
+            days_diff += 7
+
+        most_recent_date = focal_date - _timedelta(days=days_diff)
+
+        return _datetime.combine(most_recent_date, self.time, tzinfo=_timezone.utc)
+
+    @staticmethod
+    def const(week_day: WeekdayLiteral, time: _time, event_type: EventTypeLiteral) -> "TradingHour":
+        return TradingHour(_TradingHourDto(
+            weekDay=f"{week_day}, {time}Z",
+            eventType=event_type,
+        ))
+
+
+class Session:
+    def __init__(
+        self,
+        session_open: TradingHour,
+        session_close: TradingHour,
+        focal_time: _datetime,
+    ) -> None:
+        if session_open.event_type != "SESSION_OPEN" or session_close.event_type != "SESSION_CLOSE":
+            raise ValueError(
+                f"sessions need to begin and end (open:{session_open.event_type}) (close:{session_close.event_type})"
+            )
+        close_dt = session_close.to_dt(focal_time)
+        open_dt = session_open.to_dt(close_dt)
+
+        if (close_dt - open_dt) > _timedelta(days=1):
+            raise ValueError(f"sessions can not be longer than 24 hours (open:{open_dt}) (close:{close_dt})")
+
+        self.start_day: _Final[WeekdayLiteral] = session_open.week_day
+        self.open_time: _Final = open_dt
+        self.close_time: _Final = close_dt
+        self.th_open: _Final = session_open
+        self.th_close: _Final = session_close
+
+    @staticmethod
+    def create_sessions(
+        trading_hours: _List[TradingHour],
+        focal_time: _datetime,
+    ) -> _List["Session"]:
+        sessions: _List[Session] = []
+        for i in range(0, len(trading_hours), 2):
+            sessions.append(
+                Session(
+                    trading_hours[i],
+                    trading_hours[i + 1],
+                    focal_time,
+                )
+            )
+        return sessions
+
+
+class Instrument:
+    def __init__(
+        self,
+        dto: _InstrumentDto,
+    ) -> None:
+        self.symbol: _Final[SymbolLiteral] = dto.symbol
+        self.currency: _Final[_Optional[CurrencyLiteral]] = \
+            dto.currency if isinstance(dto, (_ForexDto, _CfdDto)) else None
+        has_th = isinstance(dto.tradingHours, list) and len(dto.tradingHours) > 0
+        self.trading_hours: _Final[_Optional[_List[TradingHour]]] = [
+            TradingHour(th_dto) for th_dto in dto.tradingHours
+        ] if dto.tradingHours and has_th else None

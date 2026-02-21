@@ -1,0 +1,12 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  run-logic:
+    uses: TickShock/gangbox/.github/workflows/base.yml@main
+
